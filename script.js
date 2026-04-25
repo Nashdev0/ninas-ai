@@ -50,6 +50,68 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   };
 
+  // Konfigurasi Marked.js untuk Custom Code Blocks (Copy Code Feature)
+  if (typeof marked !== "undefined") {
+    const renderer = new marked.Renderer();
+    renderer.code = function (codeInfo, language, isEscaped) {
+      let textStr = "";
+      let langStr = "";
+
+      if (typeof codeInfo === "object" && codeInfo !== null) {
+        textStr = codeInfo.text;
+        langStr = codeInfo.lang || "";
+      } else {
+        textStr = codeInfo;
+        langStr = language || "";
+      }
+
+      return `
+        <div class="relative group my-4 rounded-xl overflow-hidden border border-slate-700/80 shadow-sm code-block-wrapper">
+            <div class="flex justify-between items-center bg-slate-800/80 px-4 py-2 text-xs text-slate-400 border-b border-slate-700/80 backdrop-blur-sm">
+                <span class="font-mono uppercase tracking-wider">${langStr || "Code"}</span>
+                <button type="button" class="copy-code-btn hover:text-white transition-colors flex items-center gap-1.5 focus:outline-none">
+                    <i class="fa-regular fa-copy"></i> <span>Copy</span>
+                </button>
+            </div>
+            <pre class="!m-0 !rounded-none !border-none bg-[#09090b] p-4 overflow-x-auto custom-scrollbar"><code class="${langStr ? "language-" + langStr : ""} text-sm">${escapeHTML(textStr)}</code></pre>
+        </div>
+      `;
+    };
+    marked.use({ renderer });
+  }
+
+  // Event listener global untuk tombol Copy Code
+  document.addEventListener("click", async (e) => {
+    const copyBtn = e.target.closest(".copy-code-btn");
+    if (copyBtn) {
+      const codeBlock = copyBtn
+        .closest(".code-block-wrapper")
+        .querySelector("pre code");
+      if (codeBlock) {
+        try {
+          await navigator.clipboard.writeText(codeBlock.innerText);
+          const span = copyBtn.querySelector("span");
+          const icon = copyBtn.querySelector("i");
+
+          span.innerText = "Copied!";
+          icon.className = "fa-solid fa-check text-emerald-400";
+          copyBtn.classList.add("text-emerald-400");
+          copyBtn.classList.remove("text-slate-400");
+
+          setTimeout(() => {
+            span.innerText = "Copy";
+            icon.className = "fa-regular fa-copy";
+            copyBtn.classList.remove("text-emerald-400");
+          }, 2000);
+        } catch (err) {
+          console.error("Failed to copy:", err);
+          // showToast dideklarasikan di bawah, tapi akan tersedia saat diklik
+          if (typeof showToast === "function") showToast("Gagal menyalin kode");
+        }
+      }
+    }
+  });
+
   // --- Logika Sidebar & Sesi Riwayat (History) ---
   const saveSessionsLocally = () => {
     localStorage.setItem("ninas_chat_sessions", JSON.stringify(sessions));
@@ -313,12 +375,12 @@ document.addEventListener("DOMContentLoaded", () => {
         : escapeHTML(safeText);
     return `
             <div class="flex justify-start animate-message w-full">
-                <div class="flex gap-3 max-w-[95%] md:max-w-[85%]">
+                <div class="flex gap-3 max-w-[95%] md:max-w-[85%] min-w-0">
                     <div class="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-brand-card border border-slate-600 flex-shrink-0 flex items-center justify-center shadow-sm mt-1 overflow-hidden">
-                        <img src="./logo.png" alt="ninas.ai" class="w-full h-full object-cover">
+                        <img src="logo.png" alt="ninas.ai" class="w-full h-full object-cover">
                     </div>
                     <div class="flex flex-col items-start w-full min-w-0">
-                        <div class="bg-brand-card border border-slate-700/80 text-slate-200 py-3 px-5 rounded-2xl rounded-tl-sm shadow-sm ai-content w-full overflow-x-auto" style="contain: paint;">
+                        <div class="bg-brand-card border border-slate-700/80 text-slate-200 py-3 px-5 rounded-2xl rounded-tl-sm shadow-sm ai-content w-full overflow-x-hidden break-words" style="contain: paint;">
                             ${parsedHTML}
                         </div>
                         <div class="flex items-center gap-3 mt-1.5 ml-1">
@@ -404,12 +466,18 @@ Gaya Komunikasi:
       safetySettings: [
         { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
         { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+        {
+          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          threshold: "BLOCK_NONE",
+        },
+        {
+          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+          threshold: "BLOCK_NONE",
+        },
       ],
       generationConfig: {
         maxOutputTokens: 8192,
-      }
+      },
     };
 
     try {
@@ -521,16 +589,20 @@ Gaya Komunikasi:
   const clearChatBtn = document.getElementById("clear-chat");
   if (clearChatBtn) {
     clearChatBtn.addEventListener("click", () => {
-      if (confirm("Apakah Anda yakin ingin menghapus obrolan ini sepenuhnya? Obrolan akan hilang dari riwayat.")) {
+      if (
+        confirm(
+          "Apakah Anda yakin ingin menghapus obrolan ini sepenuhnya? Obrolan akan hilang dari riwayat.",
+        )
+      ) {
         // Hapus session aktif dari daftar
         if (currentSessionId) {
           sessions = sessions.filter((s) => s.id !== currentSessionId);
           saveSessionsLocally(); // otomatis memanggil renderHistoryList
         }
-        
+
         // Memulai obrolan baru untuk mereset UI
         startNewChat();
-        
+
         showNotification("Obrolan berhasil dihapus");
       }
     });
