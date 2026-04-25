@@ -35,6 +35,15 @@ document.addEventListener("DOMContentLoaded", () => {
     apiKeyInput.value = localStorage.getItem("gemini_api_key");
   }
 
+  // State Lampiran Gambar
+  let currentImageData = null;
+  let currentImageMimeType = null;
+  const fileInput = document.getElementById("file-input");
+  const attachmentBtn = document.getElementById("attachment-btn");
+  const imagePreviewContainer = document.getElementById("image-preview-container");
+  const imagePreview = document.getElementById("image-preview");
+  const removeImageBtn = document.getElementById("remove-image-btn");
+
   // --- Helper Mencegah XSS ---
   const escapeHTML = (str) => {
     return str.replace(
@@ -49,6 +58,42 @@ document.addEventListener("DOMContentLoaded", () => {
         })[tag],
     );
   };
+
+  const clearImageAttachment = () => {
+      currentImageData = null;
+      currentImageMimeType = null;
+      if (fileInput) fileInput.value = "";
+      if (imagePreviewContainer) imagePreviewContainer.classList.add("hidden");
+  };
+
+  if (attachmentBtn && fileInput) {
+    attachmentBtn.addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+            if (typeof showToast === 'function') showToast("Ukuran gambar maksimal 5MB.");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const dataUrl = event.target.result;
+          currentImageData = dataUrl.split(",")[1];
+          currentImageMimeType = file.type;
+          imagePreview.src = dataUrl;
+          imagePreviewContainer.classList.remove("hidden");
+          sendBtn.removeAttribute("disabled");
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    removeImageBtn.addEventListener("click", () => {
+      clearImageAttachment();
+      if (chatInput.value.trim().length === 0) sendBtn.setAttribute("disabled", "true");
+    });
+  }
 
   // Konfigurasi Marked.js untuk Custom Code Blocks (Copy Code Feature)
   if (typeof marked !== "undefined") {
@@ -186,16 +231,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Render semua pesan dari history (format UI langsung)
     session.history.forEach((msg) => {
+      const textPart = msg.parts && msg.parts.find(p => p.text);
+      const text = textPart ? textPart.text : "";
+      
+      const inlineDataPart = msg.parts && msg.parts.find(p => p.inlineData);
+      const imageSrc = inlineDataPart ? `data:${inlineDataPart.inlineData.mimeType};base64,${inlineDataPart.inlineData.data}` : null;
+
       if (msg.role === "user") {
-        chatContainer.insertAdjacentHTML(
-          "beforeend",
-          createUserMessage(msg.parts[0].text),
-        );
+        chatContainer.insertAdjacentHTML("beforeend", createUserMessage(text, imageSrc));
       } else {
-        chatContainer.insertAdjacentHTML(
-          "beforeend",
-          createAIMessage(msg.parts[0].text),
-        );
+        chatContainer.insertAdjacentHTML("beforeend", createAIMessage(text));
       }
     });
 
@@ -303,12 +348,16 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // --- Komponen UI Pesan ---
-  const createUserMessage = (text) => {
+  const createUserMessage = (text, imageSrc = null) => {
+    const imageHtml = imageSrc ? `<div class="mb-3 rounded-lg overflow-hidden border border-indigo-500/30 w-full max-w-[250px]"><img src="${imageSrc}" class="w-full h-auto object-cover" /></div>` : '';
+    const textHtml = text ? `<p class="whitespace-pre-wrap text-sm md:text-base">${escapeHTML(text)}</p>` : '';
+
     return `
             <div class="flex justify-end animate-message w-full">
                 <div class="max-w-[85%] md:max-w-[75%] flex flex-col items-end">
-                    <div class="bg-gradient-to-br from-brand-indigo to-indigo-600 text-white py-3 px-5 rounded-2xl rounded-tr-sm shadow-md border border-indigo-500/30">
-                        <p class="whitespace-pre-wrap text-sm md:text-base">${escapeHTML(text)}</p>
+                    <div class="bg-gradient-to-br from-brand-indigo to-indigo-600 text-white py-3 px-5 rounded-2xl rounded-tr-sm shadow-md border border-indigo-500/30 flex flex-col items-end">
+                        ${imageHtml}
+                        ${textHtml}
                     </div>
                     <div class="text-xs text-slate-500 mt-1.5 flex items-center gap-1">
                         ${getCurrentTime()} <i class="fa-solid fa-check-double text-[10px] text-brand-cyan"></i>
@@ -405,7 +454,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // --- API GEMINI INTEGRATION ---
-  const generateAIResponse = async (userMessage, typingId) => {
+  const generateAIResponse = async (userMessage, imageData, mimeType, typingId) => {
     const apiKey = localStorage.getItem("gemini_api_key");
     const removeTyping = () => {
       const typingIndicator = document.getElementById(typingId);
@@ -427,8 +476,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     // Update Memori API & Sesi User
-    chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-    updateSessionState("user", userMessage);
+    const userParts = [];
+    if (userMessage) userParts.push({ text: userMessage });
+    if (imageData && mimeType) {
+        userParts.push({
+            inlineData: { mimeType: mimeType, data: imageData }
+        });
+    }
+    chatHistory.push({ role: "user", parts: userParts });
+    updateSessionState("user", userMessage || "[Gambar dikirim]");
 
     const currentDate = new Date().toLocaleString("id-ID", {
       weekday: "long",
@@ -546,7 +602,7 @@ Gaya Komunikasi:
     e.preventDefault();
 
     const message = chatInput.value.trim();
-    if (!message) return;
+    if (!message && !currentImageData) return;
 
     // Cari elemen welcomeScreen karena bisa jadi clone yang terpasang di DOM
     const currentWelcome =
@@ -556,18 +612,23 @@ Gaya Komunikasi:
       currentWelcome.style.display = "none";
     }
 
-    chatContainer.insertAdjacentHTML("beforeend", createUserMessage(message));
+    const imageData = currentImageData;
+    const mimeType = currentImageMimeType;
+    const imageSrc = imageData ? `data:${mimeType};base64,${imageData}` : null;
+    
+    chatContainer.insertAdjacentHTML("beforeend", createUserMessage(message, imageSrc));
 
     chatInput.value = "";
     chatInput.style.height = "auto";
     sendBtn.setAttribute("disabled", "true");
+    clearImageAttachment();
     scrollToBottom();
 
     const typingData = createTypingIndicator();
     chatContainer.insertAdjacentHTML("beforeend", typingData.html);
     scrollToBottom();
 
-    generateAIResponse(message, typingData.id);
+    generateAIResponse(message, imageData, mimeType, typingData.id);
   });
 
   sendBtn.setAttribute("disabled", "true");
@@ -605,6 +666,16 @@ Gaya Komunikasi:
 
         showNotification("Obrolan berhasil dihapus");
       }
+    });
+  }
+
+  // --- Fitur Laporkan Bug ---
+  const reportBugBtn = document.getElementById("report-bug");
+  if (reportBugBtn) {
+    reportBugBtn.addEventListener("click", () => {
+      const waNumber = "6285169087636";
+      const text = encodeURIComponent("Halo NashDev, saya menemukan bug pada ninas.ai.\n\nDetail bug: ");
+      window.open(`https://wa.me/${waNumber}?text=${text}`, "_blank");
     });
   }
 });
