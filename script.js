@@ -362,8 +362,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const selectedModel = document.getElementById("model-selector").value;
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     // Update Memori API & Sesi User
     chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
