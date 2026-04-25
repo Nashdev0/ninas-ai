@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ninas.ai - Modern AI Chat</title>
+    <!-- Tailwind CSS (via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Konfigurasi Tailwind Kustom
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            cyan: '#06b6d4', // Warna aksen cyan
+                            indigo: '#6366f1', // Warna aksen indigo
+                            dark: '#0f172a', // Latar belakang utama (slate-900)
+                            card: '#1e293b', // Latar belakang card (slate-800)
+                        }
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome untuk Ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Marked.js untuk Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- CSS Eksternal -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-brand-dark text-slate-200 font-inter h-screen overflow-hidden flex">
+
+    <!-- Overlay untuk Sidebar di Mobile -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-20 hidden lg:hidden backdrop-blur-sm transition-opacity"></div>
+
+    <!-- Sidebar (Kiri) -->
+    <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-30 w-[280px] flex flex-col glass-sidebar border-r border-slate-700/50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none">
+        
+        <!-- Header Sidebar (Logo & Tutup) -->
+        <div class="p-5 flex items-center justify-between border-b border-slate-700/50">
+            <div class="flex items-center gap-3">
+                <img src="./logo.png" alt="ninas.ai" class="w-8 h-8 rounded-lg shadow-lg shadow-brand-cyan/20 object-cover">
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300 tracking-tight">ninas.ai</h1>
+            </div>
+            <!-- Tombol Tutup Sidebar (Hanya Mobile) -->
+            <button id="close-sidebar" class="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                <i class="fa-solid fa-times text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Tombol New Chat -->
+        <div class="p-4">
+            <button id="new-chat-btn" class="w-full py-3 px-4 bg-brand-card hover:bg-slate-700/80 border border-slate-600 rounded-xl flex items-center gap-3 transition-all duration-300 hover:border-brand-cyan group hover:shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                <i class="fa-solid fa-plus text-brand-cyan group-hover:rotate-90 transition-transform duration-300"></i>
+                <span class="font-medium text-sm text-slate-200">New Chat</span>
+            </button>
+        </div>
+
+        <!-- Daftar Riwayat Chat -->
+        <div id="chat-history-list" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1">
+            <!-- Riwayat chat akan dirender secara dinamis di sini via JavaScript -->
+        </div>
+
+        <!-- Profil User -->
+        <div class="p-4 border-t border-slate-700/50 mt-auto bg-slate-900/50 flex items-center justify-between gap-2">
+            <button class="flex-1 flex items-center gap-3 p-2 rounded-xl hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-700 overflow-hidden">
+                <img src="https://ui-avatars.com/api/?name=Nash+Dev&background=06b6d4&color=fff&rounded=true" alt="NashDev" class="w-9 h-9 rounded-full shadow-sm flex-shrink-0">
+                <div class="text-left flex-1 overflow-hidden">
+                    <p class="text-sm font-semibold text-white truncate">NashDev</p>
+                    <p class="text-xs text-brand-cyan font-medium truncate">Pro Plan</p>
+                </div>
+            </button>
+            <button id="open-settings" class="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-700">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Area Utama (Tengah) -->
+    <main class="flex-1 flex flex-col h-full relative w-full bg-brand-dark">
+        
+        <!-- Header Chat -->
+        <header class="h-16 flex items-center justify-between px-4 lg:px-6 border-b border-slate-800/80 bg-brand-dark/80 backdrop-blur-md z-10 sticky top-0">
+            <div class="flex items-center gap-4">
+                <!-- Tombol Buka Sidebar (Hanya Mobile) -->
+                <button id="open-sidebar" class="lg:hidden w-10 h-10 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                
+                <!-- Status AI -->
+                <div class="flex flex-col">
+                    <h2 class="text-base font-semibold text-slate-100">ninas.ai</h2>
+                    <div class="flex items-center gap-1.5 text-xs text-slate-400">
+                        <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        Online & Ready
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Aksi Tambahan -->
+            <div class="flex items-center gap-2 text-slate-400">
+                <button class="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-slate-800 hover:text-white transition-colors"><i class="fa-solid fa-download"></i></button>
+                <button class="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-slate-800 hover:text-white transition-colors"><i class="fa-solid fa-share-nodes"></i></button>
+            </div>
+        </header>
+
+        <!-- Area Percakapan -->
+        <div id="chat-container" class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-8 space-y-6 scroll-smooth bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed opacity-90">
+            
+            <!-- Layar Selamat Datang (Kosong) -->
+            <div class="flex flex-col items-center justify-center h-full text-center space-y-5" id="welcome-screen">
+                <div class="relative">
+                    <div class="absolute -inset-1 rounded-full bg-gradient-to-r from-brand-cyan to-brand-indigo blur opacity-50 animate-pulse"></div>
+                    <div class="relative w-20 h-20 rounded-2xl bg-brand-card border border-slate-700 flex items-center justify-center shadow-2xl overflow-hidden">
+                        <img src="./logo.png" alt="ninas.ai" class="w-full h-full object-cover">
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <h2 class="text-2xl md:text-3xl font-bold text-white tracking-tight">Halo, NashDev!</h2>
+                    <p class="text-slate-400 max-w-md mx-auto text-sm md:text-base">Saya ninas.ai, asisten cerdas Anda. Ada yang bisa saya bantu buat, pelajari, atau pecahkan hari ini?</p>
+                </div>
+                
+                <!-- Chips Sugesti -->
+                <div class="flex flex-wrap justify-center gap-2 mt-4 max-w-lg">
+                    <button class="px-4 py-2 rounded-full border border-slate-700 bg-slate-800/50 hover:bg-slate-700 text-sm text-slate-300 hover:text-white transition-colors cursor-pointer text-left">
+                        💡 Beri ide postingan sosmed
+                    </button>
+                    <button class="px-4 py-2 rounded-full border border-slate-700 bg-slate-800/50 hover:bg-slate-700 text-sm text-slate-300 hover:text-white transition-colors cursor-pointer text-left">
+                        💻 Analisis kode Javascript ini
+                    </button>
+                    <button class="px-4 py-2 rounded-full border border-slate-700 bg-slate-800/50 hover:bg-slate-700 text-sm text-slate-300 hover:text-white transition-colors cursor-pointer text-left">
+                        📝 Buatkan template email
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Pesan akan diinjeksi ke sini melalui JavaScript -->
+        </div>
+
+        <!-- Area Input -->
+        <div class="p-4 lg:p-6 bg-gradient-to-t from-brand-dark via-brand-dark/95 to-transparent relative z-20">
+            <div class="max-w-4xl mx-auto relative glass-input rounded-2xl border border-slate-600/60 shadow-2xl focus-within:border-brand-indigo/60 focus-within:ring-2 focus-within:ring-brand-indigo/20 focus-within:shadow-[0_0_30px_rgba(99,102,241,0.15)] transition-all duration-300">
+                <form id="chat-form" class="flex items-end gap-2 p-2">
+                    <!-- Tombol Lampiran -->
+                    <button type="button" class="p-3 text-slate-400 hover:text-brand-cyan hover:bg-slate-800 transition-colors rounded-xl flex-shrink-0" title="Lampirkan file">
+                        <i class="fa-solid fa-paperclip text-xl"></i>
+                    </button>
+                    
+                    <!-- Textarea -->
+                    <textarea 
+                        id="chat-input" 
+                        rows="1" 
+                        placeholder="Tanyakan sesuatu pada ninas.ai... (Shift+Enter untuk baris baru)" 
+                        class="w-full max-h-[150px] bg-transparent text-slate-100 placeholder-slate-500 border-none focus:ring-0 resize-none py-3.5 px-2 custom-scrollbar text-base"
+                    ></textarea>
+                    
+                    <!-- Tombol Kirim -->
+                    <button type="submit" id="send-btn" class="p-3 bg-brand-indigo hover:bg-brand-indigo/90 text-white transition-all duration-300 rounded-xl shadow-lg shadow-brand-indigo/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-indigo flex-shrink-0">
+                        <i class="fa-solid fa-paper-plane text-lg"></i>
+                    </button>
+                </form>
+            </div>
+            <p class="text-center text-xs text-slate-500 mt-4 font-medium">ninas.ai dapat membuat kesalahan. Harap periksa kembali informasi yang penting.</p>
+        </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/60 z-50 hidden backdrop-blur-sm flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div id="settings-content" class="glass-input border border-slate-600/60 rounded-2xl shadow-2xl p-6 w-[90%] max-w-md transform scale-95 transition-transform duration-300 relative z-50">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-gear text-brand-cyan"></i> Pengaturan
+                </h3>
+                <button id="close-settings" class="text-slate-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label for="api-key-input" class="block text-sm font-medium text-slate-300 mb-1">Gemini API Key</label>
+                    <input type="password" id="api-key-input" placeholder="Masukkan API Key (AIzaSy...)" class="w-full bg-slate-800/80 border border-slate-600 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-brand-indigo focus:ring-1 focus:ring-brand-indigo transition-colors placeholder-slate-500">
+                    <p class="text-xs text-slate-400 mt-2">API Key disimpan secara aman di browser lokal Anda (localStorage).</p>
+                </div>
+                <button id="save-settings" class="w-full py-2.5 bg-brand-indigo hover:bg-brand-indigo/90 text-white rounded-xl font-medium transition-colors shadow-lg shadow-brand-indigo/20 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-save"></i> Simpan Pengaturan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="glass-input border border-emerald-500/30 rounded-xl shadow-lg p-4 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <p id="toast-message" class="text-sm font-medium text-slate-200">Pengaturan berhasil disimpan!</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
