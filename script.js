@@ -25,6 +25,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const apiKeyInput = document.getElementById("api-key-input");
   const toast = document.getElementById("toast");
 
+  // Elemen Profil & Auth Modal
+  const userProfileBtn = document.getElementById("user-profile-btn");
+  const userAvatar = document.getElementById("user-avatar");
+  const userName = document.getElementById("user-name");
+  const userPlan = document.getElementById("user-plan");
+  
+  const authModal = document.getElementById("auth-modal");
+  const authContent = document.getElementById("auth-content");
+  const closeAuthBtn = document.getElementById("close-auth");
+  const authTitle = document.getElementById("auth-title");
+  const authFormContainer = document.getElementById("auth-form-container");
+  const authLogoutContainer = document.getElementById("auth-logout-container");
+  const authNicknameInput = document.getElementById("auth-nickname");
+  const authSubmitBtn = document.getElementById("auth-submit-btn");
+  const authGoogleBtn = document.getElementById("auth-google-btn");
+  const authLogoutBtn = document.getElementById("auth-logout-btn");
+
   // --- State Aplikasi (Manajemen Sesi) ---
   let chatHistory = []; // Menyimpan riwayat obrolan untuk API payload saat ini
   let currentSessionId = null;
@@ -352,6 +369,96 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     closeSettings();
   });
+
+  // --- Logika Autentikasi (Profil & Login) ---
+  const updateProfileUI = () => {
+    const savedUser = localStorage.getItem("ninas_user");
+    if (savedUser) {
+      userName.textContent = savedUser;
+      userPlan.textContent = "Ninas Team";
+      userAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(savedUser)}&background=06b6d4&color=fff&rounded=true`;
+    } else {
+      userName.textContent = "Anonym";
+      userPlan.textContent = "Ninas Team";
+      userAvatar.src = `https://ui-avatars.com/api/?name=Anonym&background=475569&color=fff&rounded=true`;
+    }
+  };
+
+  const openAuthModal = () => {
+    const savedUser = localStorage.getItem("ninas_user");
+    if (savedUser) {
+      authTitle.textContent = "Profil Anda";
+      authFormContainer.classList.add("hidden");
+      authGoogleBtn.classList.add("hidden");
+      authLogoutContainer.classList.remove("hidden");
+      authNicknameInput.value = "";
+    } else {
+      authTitle.textContent = "Login / Register";
+      authFormContainer.classList.remove("hidden");
+      authGoogleBtn.classList.remove("hidden");
+      authLogoutContainer.classList.add("hidden");
+      authNicknameInput.value = "";
+    }
+
+    authModal.classList.remove("hidden");
+    // Paksa reflow sebelum menghapus opacity-0 agar transisi berjalan
+    void authModal.offsetWidth;
+    authModal.classList.remove("opacity-0");
+    authContent.classList.remove("scale-95");
+  };
+
+  const closeAuthModal = () => {
+    authModal.classList.add("opacity-0");
+    authContent.classList.add("scale-95");
+    setTimeout(() => authModal.classList.add("hidden"), 300);
+  };
+
+  const handleLogin = (nickname) => {
+    if (!nickname) {
+      showToast("Nickname tidak boleh kosong!");
+      return;
+    }
+    localStorage.setItem("ninas_user", nickname);
+    updateProfileUI();
+    showToast(`Berhasil login sebagai ${nickname}!`);
+    closeAuthModal();
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("ninas_user");
+    updateProfileUI();
+    showToast("Berhasil logout.");
+    closeAuthModal();
+  };
+
+  if (userProfileBtn) userProfileBtn.addEventListener("click", openAuthModal);
+  if (closeAuthBtn) closeAuthBtn.addEventListener("click", closeAuthModal);
+  if (authModal) {
+    authModal.addEventListener("click", (e) => {
+      if (e.target === authModal) closeAuthModal();
+    });
+  }
+
+  if (authSubmitBtn) {
+    authSubmitBtn.addEventListener("click", () => {
+      handleLogin(authNicknameInput.value.trim());
+    });
+  }
+
+  if (authGoogleBtn) {
+    authGoogleBtn.addEventListener("click", () => {
+      // Karena belum ada setup Firebase Auth dari sisi developer, ini sebagai simulasi
+      const mockGoogleName = prompt("Simulasi Google Login berhasil! Masukkan nickname Anda untuk lanjut:");
+      if (mockGoogleName) handleLogin(mockGoogleName);
+    });
+  }
+
+  if (authLogoutBtn) {
+    authLogoutBtn.addEventListener("click", handleLogout);
+  }
+
+  // Panggil updateProfileUI saat awal muat
+  updateProfileUI();
 
   // --- Logika Sidebar Toggle (Mobile) ---
   const toggleSidebar = () => {
