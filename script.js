@@ -355,7 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
       chatContainer.insertAdjacentHTML(
         "beforeend",
         createErrorMessage(
-          "API Key tidak ditemukan. Silakan masukkan Gemini API Key di menu Pengaturan (Ikon Gir).",
+          "API Key tidak ditemukan. Silakan minta API key terlebih dahulu dengan mengklik tombol WhatsApp di atas.",
         ),
       );
       scrollToBottom();
@@ -401,6 +401,12 @@ Gaya Komunikasi:
     const payload = {
       systemInstruction: { parts: [{ text: systemPrompt }] },
       contents: chatHistory,
+      safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+      ],
       generationConfig: {
         maxOutputTokens: 8192,
       }
