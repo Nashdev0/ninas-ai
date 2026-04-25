@@ -401,8 +401,10 @@ Gaya Komunikasi:
 
     const payload = {
       systemInstruction: { parts: [{ text: systemPrompt }] },
-      tools: [{ googleSearch: {} }],
       contents: chatHistory,
+      generationConfig: {
+        maxOutputTokens: 8192,
+      }
     };
 
     try {
@@ -427,7 +429,7 @@ Gaya Komunikasi:
       ) {
         const aiText = data.candidates[0].content.parts
           .map((p) => p.text || "")
-          .join("\\n");
+          .join("\n");
 
         chatHistory.push({ role: "model", parts: [{ text: aiText }] });
         updateSessionState("model", aiText);
