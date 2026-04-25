@@ -515,29 +515,17 @@ Gaya Komunikasi:
   const clearChatBtn = document.getElementById("clear-chat");
   if (clearChatBtn) {
     clearChatBtn.addEventListener("click", () => {
-      if (confirm("Apakah Anda yakin ingin menghapus seluruh pesan di obrolan ini?")) {
-        // Hapus history di memori UI
-        chatHistory = [];
-        
-        // Hapus DOM
-        chatContainer.innerHTML = "";
-        
-        // Kembalikan welcome screen
-        if (welcomeScreen) {
-            welcomeScreen.style.display = "flex";
-            chatContainer.appendChild(welcomeScreen);
-        }
-
-        // Kosongkan history session aktif
-        const session = sessions.find((s) => s.id === currentSessionId);
-        if (session) {
-          session.history = [];
-          // Karena pesan sudah kosong, kembalikan judul ke New Chat
-          session.title = "New Chat";
-          saveSessionsLocally();
+      if (confirm("Apakah Anda yakin ingin menghapus obrolan ini sepenuhnya? Obrolan akan hilang dari riwayat.")) {
+        // Hapus session aktif dari daftar
+        if (currentSessionId) {
+          sessions = sessions.filter((s) => s.id !== currentSessionId);
+          saveSessionsLocally(); // otomatis memanggil renderHistoryList
         }
         
-        showNotification("Obrolan berhasil dibersihkan");
+        // Memulai obrolan baru untuk mereset UI
+        startNewChat();
+        
+        showNotification("Obrolan berhasil dihapus");
       }
     });
   }
