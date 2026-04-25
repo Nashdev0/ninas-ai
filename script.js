@@ -1,22 +1,27 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // --- Referensi Elemen DOM ---
+  // ==========================================
+  // BAGIAN 1: REFERENSI ELEMEN DOM (HTML)
+  // Mengambil elemen-elemen dari HTML agar bisa dikontrol via JavaScript
+  // ==========================================
+  
+  // Elemen Utama Chat
   const chatForm = document.getElementById("chat-form");
   const chatInput = document.getElementById("chat-input");
   const chatContainer = document.getElementById("chat-container");
   const welcomeScreen = document.getElementById("welcome-screen");
   const sendBtn = document.getElementById("send-btn");
 
-  // Elemen Sidebar & Mobile
+  // Elemen Sidebar (Kiri) & Mobile
   const sidebar = document.getElementById("sidebar");
   const sidebarOverlay = document.getElementById("sidebar-overlay");
   const openSidebarBtn = document.getElementById("open-sidebar");
   const closeSidebarBtn = document.getElementById("close-sidebar");
 
-  // Elemen History Sidebar
+  // Elemen Riwayat Chat (History) di Sidebar
   const chatHistoryList = document.getElementById("chat-history-list");
   const newChatBtn = document.getElementById("new-chat-btn");
 
-  // Elemen Settings Modal
+  // Elemen Pengaturan (Modal Settings)
   const settingsModal = document.getElementById("settings-modal");
   const settingsContent = document.getElementById("settings-content");
   const openSettingsBtn = document.getElementById("open-settings");
@@ -25,12 +30,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const apiKeyInput = document.getElementById("api-key-input");
   const toast = document.getElementById("toast");
 
-  // Elemen Profil & Auth Modal
+  // Elemen Profil User & Modal Autentikasi (Login/Register)
   const userProfileBtn = document.getElementById("user-profile-btn");
   const userAvatar = document.getElementById("user-avatar");
   const userName = document.getElementById("user-name");
   const userPlan = document.getElementById("user-plan");
-  
+
   const authModal = document.getElementById("auth-modal");
   const authContent = document.getElementById("auth-content");
   const closeAuthBtn = document.getElementById("close-auth");
@@ -42,19 +47,27 @@ document.addEventListener("DOMContentLoaded", () => {
   const authGoogleBtn = document.getElementById("auth-google-btn");
   const authLogoutBtn = document.getElementById("auth-logout-btn");
 
-  // --- State Aplikasi (Manajemen Sesi) ---
-  let chatHistory = []; // Menyimpan riwayat obrolan untuk API payload saat ini
-  let currentSessionId = null;
+  // ==========================================
+  // BAGIAN 2: MANAJEMEN STATE (DATA SEMENTARA)
+  // Menyimpan data seperti riwayat chat dan sesi aktif
+  // ==========================================
+  let chatHistory = []; // Array untuk menyimpan riwayat chat agar AI ingat konteks obrolan
+  let currentSessionId = null; // ID sesi chat yang sedang aktif
+  // Mengambil daftar sesi chat sebelumnya dari LocalStorage (jika ada)
   let sessions = JSON.parse(localStorage.getItem("ninas_chat_sessions")) || [];
 
-  // Inisialisasi API Key dari LocalStorage
+  // Mengisi form API Key secara otomatis jika sudah pernah disimpan sebelumnya
   if (localStorage.getItem("gemini_api_key")) {
     apiKeyInput.value = localStorage.getItem("gemini_api_key");
   }
 
-  // State Lampiran Gambar
-  let currentImageData = null;
-  let currentImageMimeType = null;
+  // ==========================================
+  // BAGIAN 3: PENGELOLAAN GAMBAR (UPLOAD & KOMPRESI)
+  // Menyimpan data gambar yang akan dikirim ke AI
+  // ==========================================
+  let currentImageData = null; // Data gambar dalam format Base64
+  let currentImageMimeType = null; // Format gambar (misal: image/webp)
+  
   const fileInput = document.getElementById("file-input");
   const attachmentBtn = document.getElementById("attachment-btn");
   const imagePreviewContainer = document.getElementById(
@@ -63,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const imagePreview = document.getElementById("image-preview");
   const removeImageBtn = document.getElementById("remove-image-btn");
 
-  // --- Helper Mencegah XSS ---
+  // Fungsi keamanan dasar: Mengubah karakter HTML berbahaya menjadi aman (mencegah XSS)
   const escapeHTML = (str) => {
     return str.replace(
       /[&<>'"]/g,
@@ -147,7 +160,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Konfigurasi Marked.js untuk Custom Code Blocks (Copy Code Feature)
+  // ==========================================
+  // BAGIAN 4: MARKDOWN & COPY CODE (FORMATTING)
+  // Konfigurasi Marked.js untuk menerjemahkan teks AI menjadi HTML
+  // dan menambahkan tombol "Copy" pada blok kode
+  // ==========================================
   if (typeof marked !== "undefined") {
     const renderer = new marked.Renderer();
     renderer.code = function (codeInfo, language, isEscaped) {
@@ -209,7 +226,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --- Logika Sidebar & Sesi Riwayat (History) ---
+  // ==========================================
+  // BAGIAN 5: MANAJEMEN RIWAYAT & SESI CHAT
+  // Menyimpan dan memuat obrolan dari LocalStorage
+  // ==========================================
+  
+  // Menyimpan seluruh sesi ke penyimpanan lokal browser
   const saveSessionsLocally = () => {
     localStorage.setItem("ninas_chat_sessions", JSON.stringify(sessions));
     renderHistoryList();
@@ -331,7 +353,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Render daftar history pada inisialisasi awal
   renderHistoryList();
 
-  // --- Logika Pengaturan (Settings Modal) ---
+  // ==========================================
+  // BAGIAN 6: PENGATURAN (SETTINGS) API KEY
+  // Menangani modal pengaturan untuk memasukkan API Key Gemini
+  // ==========================================
   const openSettings = () => {
     settingsModal.classList.remove("hidden");
     void settingsModal.offsetWidth;
@@ -370,7 +395,10 @@ document.addEventListener("DOMContentLoaded", () => {
     closeSettings();
   });
 
-  // --- Logika Autentikasi (Profil & Login) ---
+  // ==========================================
+  // BAGIAN 7: AUTENTIKASI (PROFIL & LOGIN/REGISTER)
+  // Menangani tampilan profil, modal login, dan simulasi login Google
+  // ==========================================
   const updateProfileUI = () => {
     const savedUser = localStorage.getItem("ninas_user");
     if (savedUser) {
@@ -448,7 +476,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (authGoogleBtn) {
     authGoogleBtn.addEventListener("click", () => {
       // Karena belum ada setup Firebase Auth dari sisi developer, ini sebagai simulasi
-      const mockGoogleName = prompt("Simulasi Google Login berhasil! Masukkan nickname Anda untuk lanjut:");
+      const mockGoogleName = prompt(
+        "Simulasi Google Login berhasil! Masukkan nickname Anda untuk lanjut:",
+      );
       if (mockGoogleName) handleLogin(mockGoogleName);
     });
   }
@@ -460,7 +490,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Panggil updateProfileUI saat awal muat
   updateProfileUI();
 
-  // --- Logika Sidebar Toggle (Mobile) ---
+  // ==========================================
+  // BAGIAN 8: KONTROL UI SIDEBAR & INPUT
+  // Menangani toggle sidebar di HP dan efek otomatis membesar pada input chat
+  // ==========================================
   const toggleSidebar = () => {
     sidebar.classList.toggle("-translate-x-full");
     sidebarOverlay.classList.toggle("hidden");
@@ -494,7 +527,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
-  // --- Komponen UI Pesan ---
+  // ==========================================
+  // BAGIAN 9: PEMBUATAN ELEMEN UI PESAN (BUBBLE CHAT)
+  // Fungsi-fungsi pembantu untuk membuat HTML bubble chat secara dinamis
+  // ==========================================
+  
+  // Membuat bubble chat untuk pesan pengguna (User)
   const createUserMessage = (text, imageSrc = null) => {
     const imageHtml = imageSrc
       ? `<div class="mb-3 rounded-lg overflow-hidden border border-indigo-500/30 w-full max-w-[250px]"><img src="${imageSrc}" class="w-full h-auto object-cover" /></div>`
@@ -604,7 +642,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
-  // --- API GEMINI INTEGRATION ---
+  // ==========================================
+  // BAGIAN 10: INTEGRASI API GOOGLE GEMINI (INTI KECERDASAN AI)
+  // Fungsi utama untuk mengirim pesan pengguna ke server Google dan menerima balasannya
+  // ==========================================
   const generateAIResponse = async (
     userMessage,
     imageData,
@@ -755,7 +796,10 @@ Gaya Komunikasi:
     }
   };
 
-  // --- Eksekusi Form Submit ---
+  // ==========================================
+  // BAGIAN 11: PENGIRIMAN PESAN UTAMA (FORM SUBMIT)
+  // Menangani aksi ketika pengguna menekan tombol Enter atau mengeklik Kirim
+  // ==========================================
   chatForm.addEventListener("submit", (e) => {
     e.preventDefault();
 
@@ -807,7 +851,12 @@ Gaya Komunikasi:
     });
   }
 
-  // --- Fitur Clear Chat (Hapus Pesan) ---
+  // ==========================================
+  // BAGIAN 12: FITUR TAMBAHAN (CLEAR CHAT & LAPORAN BUG)
+  // Menangani fungsi hapus riwayat dan melaporkan masalah ke WhatsApp
+  // ==========================================
+  
+  // Fitur Clear Chat (Hapus Pesan)
   const clearChatBtn = document.getElementById("clear-chat");
   if (clearChatBtn) {
     clearChatBtn.addEventListener("click", () => {
