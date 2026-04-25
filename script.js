@@ -72,18 +72,49 @@ document.addEventListener("DOMContentLoaded", () => {
     fileInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (file) {
-        if (file.size > 5 * 1024 * 1024) {
-            if (typeof showToast === 'function') showToast("Ukuran gambar maksimal 5MB.");
+        // Karena kita kompres di browser, batas ukuran bisa lebih besar (misal 10MB) sebelum dikompres
+        if (file.size > 10 * 1024 * 1024) {
+            if (typeof showToast === 'function') showToast("Ukuran gambar terlalu besar (Maks 10MB).");
             return;
         }
         const reader = new FileReader();
         reader.onload = (event) => {
-          const dataUrl = event.target.result;
-          currentImageData = dataUrl.split(",")[1];
-          currentImageMimeType = file.type;
-          imagePreview.src = dataUrl;
-          imagePreviewContainer.classList.remove("hidden");
-          sendBtn.removeAttribute("disabled");
+          const img = new Image();
+          img.onload = () => {
+            // Kompresi Gambar agar hemat kuota (maks 1024x1024)
+            const MAX_WIDTH = 1024;
+            const MAX_HEIGHT = 1024;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Convert ke WebP dengan kualitas 70% (Sangat hemat kuota)
+            const dataUrl = canvas.toDataURL("image/webp", 0.7);
+            
+            currentImageData = dataUrl.split(",")[1];
+            currentImageMimeType = "image/webp";
+            imagePreview.src = dataUrl;
+            imagePreviewContainer.classList.remove("hidden");
+            sendBtn.removeAttribute("disabled");
+          };
+          img.src = event.target.result;
         };
         reader.readAsDataURL(file);
       }
@@ -514,6 +545,7 @@ Gaya Komunikasi:
 - Berbicaralah dengan nada yang profesional, analitis, namun tetap sleek dan tidak kaku.
 - FOKUS PADA TUGAS & JANGAN BANYAK TANYA: Langsung kerjakan dan selesaikan instruksi yang diberikan dengan tuntas. Jangan banyak basa-basi atau mengajukan pertanyaan balik. Eksekusi lebih banyak, bicara lebih sedikit.
 - Jika ada yang bertanya siapa penciptamu, jawablah dengan bangga bahwa kamu adalah buatan NashDev.
+- Jika ada yang bertanya "siapa itu Nindy" atau "siapa itu Nindy Afisa", jawablah dengan sangat bangga dan lantang bahwa dia adalah pacarnya (cewenya) NashDev!
 - WAJIB gunakan format Markdown. Jika kamu memberikan kode, pastikan kode tersebut selalu dibungkus di dalam Markdown Code Blocks (\`\`\`html ... \`\`\`) agar dapat diparsing dengan benar oleh antarmuka!`;
 
     const payload = {

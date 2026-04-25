@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ninas.ai - Modern AI Chat</title>
+    <!-- Preconnect untuk mempercepat muat sumber daya eksternal -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Tailwind CSS (via CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -191,7 +196,7 @@
       <!-- Area Percakapan -->
       <div
         id="chat-container"
-        class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-8 space-y-6 scroll-smooth bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed opacity-90"
+        class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-8 space-y-6 scroll-smooth bg-[url('./cubes.png')] bg-fixed opacity-90"
       >
         <!-- Layar Selamat Datang (Kosong) -->
         <div
