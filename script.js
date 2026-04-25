@@ -510,4 +510,35 @@ Gaya Komunikasi:
       });
     });
   }
+
+  // --- Fitur Clear Chat (Hapus Pesan) ---
+  const clearChatBtn = document.getElementById("clear-chat");
+  if (clearChatBtn) {
+    clearChatBtn.addEventListener("click", () => {
+      if (confirm("Apakah Anda yakin ingin menghapus seluruh pesan di obrolan ini?")) {
+        // Hapus history di memori UI
+        chatHistory = [];
+        
+        // Hapus DOM
+        chatContainer.innerHTML = "";
+        
+        // Kembalikan welcome screen
+        if (welcomeScreen) {
+            welcomeScreen.style.display = "flex";
+            chatContainer.appendChild(welcomeScreen);
+        }
+
+        // Kosongkan history session aktif
+        const session = sessions.find((s) => s.id === currentSessionId);
+        if (session) {
+          session.history = [];
+          // Karena pesan sudah kosong, kembalikan judul ke New Chat
+          session.title = "New Chat";
+          saveSessionsLocally();
+        }
+        
+        showNotification("Obrolan berhasil dibersihkan");
+      }
+    });
+  }
 });
