@@ -40,7 +40,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentImageMimeType = null;
   const fileInput = document.getElementById("file-input");
   const attachmentBtn = document.getElementById("attachment-btn");
-  const imagePreviewContainer = document.getElementById("image-preview-container");
+  const imagePreviewContainer = document.getElementById(
+    "image-preview-container",
+  );
   const imagePreview = document.getElementById("image-preview");
   const removeImageBtn = document.getElementById("remove-image-btn");
 
@@ -60,10 +62,10 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const clearImageAttachment = () => {
-      currentImageData = null;
-      currentImageMimeType = null;
-      if (fileInput) fileInput.value = "";
-      if (imagePreviewContainer) imagePreviewContainer.classList.add("hidden");
+    currentImageData = null;
+    currentImageMimeType = null;
+    if (fileInput) fileInput.value = "";
+    if (imagePreviewContainer) imagePreviewContainer.classList.add("hidden");
   };
 
   if (attachmentBtn && fileInput) {
@@ -74,8 +76,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (file) {
         // Karena kita kompres di browser, batas ukuran bisa lebih besar (misal 10MB) sebelum dikompres
         if (file.size > 10 * 1024 * 1024) {
-            if (typeof showToast === 'function') showToast("Ukuran gambar terlalu besar (Maks 10MB).");
-            return;
+          if (typeof showToast === "function")
+            showToast("Ukuran gambar terlalu besar (Maks 10MB).");
+          return;
         }
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -107,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Convert ke WebP dengan kualitas 70% (Sangat hemat kuota)
             const dataUrl = canvas.toDataURL("image/webp", 0.7);
-            
+
             currentImageData = dataUrl.split(",")[1];
             currentImageMimeType = "image/webp";
             imagePreview.src = dataUrl;
@@ -122,7 +125,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     removeImageBtn.addEventListener("click", () => {
       clearImageAttachment();
-      if (chatInput.value.trim().length === 0) sendBtn.setAttribute("disabled", "true");
+      if (chatInput.value.trim().length === 0)
+        sendBtn.setAttribute("disabled", "true");
     });
   }
 
@@ -262,14 +266,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Render semua pesan dari history (format UI langsung)
     session.history.forEach((msg) => {
-      const textPart = msg.parts && msg.parts.find(p => p.text);
+      const textPart = msg.parts && msg.parts.find((p) => p.text);
       const text = textPart ? textPart.text : "";
-      
-      const inlineDataPart = msg.parts && msg.parts.find(p => p.inlineData);
-      const imageSrc = inlineDataPart ? `data:${inlineDataPart.inlineData.mimeType};base64,${inlineDataPart.inlineData.data}` : null;
+
+      const inlineDataPart = msg.parts && msg.parts.find((p) => p.inlineData);
+      const imageSrc = inlineDataPart
+        ? `data:${inlineDataPart.inlineData.mimeType};base64,${inlineDataPart.inlineData.data}`
+        : null;
 
       if (msg.role === "user") {
-        chatContainer.insertAdjacentHTML("beforeend", createUserMessage(text, imageSrc));
+        chatContainer.insertAdjacentHTML(
+          "beforeend",
+          createUserMessage(text, imageSrc),
+        );
       } else {
         chatContainer.insertAdjacentHTML("beforeend", createAIMessage(text));
       }
@@ -380,8 +389,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Komponen UI Pesan ---
   const createUserMessage = (text, imageSrc = null) => {
-    const imageHtml = imageSrc ? `<div class="mb-3 rounded-lg overflow-hidden border border-indigo-500/30 w-full max-w-[250px]"><img src="${imageSrc}" class="w-full h-auto object-cover" /></div>` : '';
-    const textHtml = text ? `<p class="whitespace-pre-wrap text-sm md:text-base">${escapeHTML(text)}</p>` : '';
+    const imageHtml = imageSrc
+      ? `<div class="mb-3 rounded-lg overflow-hidden border border-indigo-500/30 w-full max-w-[250px]"><img src="${imageSrc}" class="w-full h-auto object-cover" /></div>`
+      : "";
+    const textHtml = text
+      ? `<p class="whitespace-pre-wrap text-sm md:text-base">${escapeHTML(text)}</p>`
+      : "";
 
     return `
             <div class="flex justify-end animate-message w-full">
@@ -485,7 +498,12 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // --- API GEMINI INTEGRATION ---
-  const generateAIResponse = async (userMessage, imageData, mimeType, typingId) => {
+  const generateAIResponse = async (
+    userMessage,
+    imageData,
+    mimeType,
+    typingId,
+  ) => {
     const apiKey = localStorage.getItem("gemini_api_key");
     const removeTyping = () => {
       const typingIndicator = document.getElementById(typingId);
@@ -510,9 +528,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const userParts = [];
     if (userMessage) userParts.push({ text: userMessage });
     if (imageData && mimeType) {
-        userParts.push({
-            inlineData: { mimeType: mimeType, data: imageData }
-        });
+      userParts.push({
+        inlineData: { mimeType: mimeType, data: imageData },
+      });
     }
     chatHistory.push({ role: "user", parts: userParts });
     updateSessionState("user", userMessage || "[Gambar dikirim]");
@@ -542,11 +560,12 @@ Pendekatan & Pola Pikir (Chain of Thought):
 - Solusi Komprehensif: Jangan hanya memberikan jawaban singkat. Berikan penjelasan mengapa solusi tersebut bekerja.
 
 Gaya Komunikasi:
-- Berbicaralah dengan nada yang profesional, analitis, namun tetap sleek dan tidak kaku.
-- FOKUS PADA TUGAS & JANGAN BANYAK TANYA: Langsung kerjakan dan selesaikan instruksi yang diberikan dengan tuntas. Jangan banyak basa-basi atau mengajukan pertanyaan balik. Eksekusi lebih banyak, bicara lebih sedikit.
-- Jika ada yang bertanya siapa penciptamu, jawablah dengan bangga bahwa kamu adalah buatan NashDev.
-- Jika ada yang bertanya "siapa itu Nindy" atau "siapa itu Nindy Afisa", jawablah dengan sangat bangga dan lantang bahwa dia adalah pacarnya (cewenya) NashDev!
-- WAJIB gunakan format Markdown. Jika kamu memberikan kode, pastikan kode tersebut selalu dibungkus di dalam Markdown Code Blocks (\`\`\`html ... \`\`\`) agar dapat diparsing dengan benar oleh antarmuka!`;
+- Berbicaralah dengan bahasa anak muda (Gen Z) yang gaul, asik, friendly, dan chill (misalnya sesekali pakai kata: lo, gue, cuy, bro, keren banget, literally, dll). Hindari bahasa yang terlalu kaku atau formal.
+- Tetap smart dan jago coding, tapi vibenya kayak temen nongkrong yang asik diajak pair programming.
+- FOKUS PADA TUGAS: Langsung kerjain instruksi dengan tuntas. Gausah banyak basa-basi atau banyak nanya balik. Langsung eksekusi aja cuy!
+- Kalo ditanya siapa penciptamu, jawab dengan pede dan bangga kalo lo itu asisten pintar buatan NashDev.
+- Kalo ada yang nanya "siapa itu Nindy" atau "siapa itu Nindy Afisa", jawab dengan super heboh dan bangga kalo dia itu cewenya (pacarnya) NashDev!
+- WAJIB pake format Markdown. Kalo ngasih kode, pastikan kodenya dibungkus rapi di dalam Markdown Code Blocks (\`\`\`html ... \`\`\`) biar UI-nya aman!`;
 
     const payload = {
       systemInstruction: { parts: [{ text: systemPrompt }] },
@@ -647,8 +666,11 @@ Gaya Komunikasi:
     const imageData = currentImageData;
     const mimeType = currentImageMimeType;
     const imageSrc = imageData ? `data:${mimeType};base64,${imageData}` : null;
-    
-    chatContainer.insertAdjacentHTML("beforeend", createUserMessage(message, imageSrc));
+
+    chatContainer.insertAdjacentHTML(
+      "beforeend",
+      createUserMessage(message, imageSrc),
+    );
 
     chatInput.value = "";
     chatInput.style.height = "auto";
@@ -706,7 +728,9 @@ Gaya Komunikasi:
   if (reportBugBtn) {
     reportBugBtn.addEventListener("click", () => {
       const waNumber = "6285169087636";
-      const text = encodeURIComponent("Halo NashDev, saya menemukan bug pada ninas.ai.\n\nDetail bug: ");
+      const text = encodeURIComponent(
+        "Halo NashDev, saya menemukan bug pada ninas.ai.\n\nDetail bug: ",
+      );
       window.open(`https://wa.me/${waNumber}?text=${text}`, "_blank");
     });
   }
