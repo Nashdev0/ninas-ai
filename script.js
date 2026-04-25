@@ -287,10 +287,30 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const createAIMessage = (markdownText) => {
+    let safeText = markdownText;
+
+    // Auto-fix: Jika AI lupa memberikan backticks pada kode HTML/Tailwind
+    if (
+      !safeText.includes("```") &&
+      /(<!DOCTYPE|<html|<body|<div class=)/i.test(safeText)
+    ) {
+      const firstTagMatch = safeText.match(
+        /(<!DOCTYPE|<html|<body|<div class=)/i,
+      );
+      if (firstTagMatch) {
+        const index = firstTagMatch.index;
+        safeText =
+          safeText.substring(0, index) +
+          "\n```html\n" +
+          safeText.substring(index) +
+          "\n```";
+      }
+    }
+
     const parsedHTML =
       typeof marked !== "undefined"
-        ? marked.parse(markdownText)
-        : escapeHTML(markdownText);
+        ? marked.parse(safeText)
+        : escapeHTML(safeText);
     return `
             <div class="flex justify-start animate-message w-full">
                 <div class="flex gap-3 max-w-[95%] md:max-w-[85%]">
@@ -298,7 +318,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <img src="./logo.png" alt="ninas.ai" class="w-full h-full object-cover">
                     </div>
                     <div class="flex flex-col items-start w-full min-w-0">
-                        <div class="bg-brand-card border border-slate-700/80 text-slate-200 py-3 px-5 rounded-2xl rounded-tl-sm shadow-sm ai-content w-full overflow-x-auto">
+                        <div class="bg-brand-card border border-slate-700/80 text-slate-200 py-3 px-5 rounded-2xl rounded-tl-sm shadow-sm ai-content w-full overflow-x-auto" style="contain: paint;">
                             ${parsedHTML}
                         </div>
                         <div class="flex items-center gap-3 mt-1.5 ml-1">
@@ -342,7 +362,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const selectedModel = document.getElementById("model-selector").value;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
 
     // Update Memori API & Sesi User
     chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
@@ -364,17 +385,19 @@ Waktu sistem saat ini: ${currentDate}. Ingatlah waktu ini jika pengguna bertanya
 Keahlian Teknis & Pemrograman:
 - Kamu adalah master sejati dalam semua bahasa pemrograman, arsitektur perangkat lunak, dan DevOps.
 - Kamu sangat ahli dalam lingkungan pengembangan modern, otomatisasi terminal/command-line, optimasi algoritma, serta pembuatan antarmuka pengguna grafis dan web.
-- Setiap kode yang kamu tulis harus mengikuti standar clean code, modular, dilengkapi penanganan error (error handling) yang ketat, dan dioptimalkan untuk performa tertinggi.
+- Setiap kode yang kamu tulis harus mengikuti standar clean code, modular, dan dioptimalkan untuk performa tertinggi.
+- DILARANG MALAS: Kamu TIDAK BOLEH menyingkat kode (seperti /* kode lainnya di sini */ atau // bagian ini sama). Kamu HARUS menuliskan SELURUH kode secara lengkap dan utuh dari awal sampai akhir!
 
 Pendekatan & Pola Pikir (Chain of Thought):
 - Analisis Mendalam: Sebelum menjawab, selalu bedah pertanyaan pengguna untuk memahami konteks tersembunyi dan akar masalahnya.
-- Akurasi Faktual & Berita Terkini: Selalu kaitkan jawabanmu dengan informasi paling mutakhir dan berita terbaru. Sandarkan pada fakta dan dokumentasi resmi.
-- Solusi Komprehensif: Jangan hanya memberikan jawaban singkat. Berikan penjelasan mengapa solusi tersebut bekerja, alternatif pendekatan lain, dan potensi risiko (edge cases).
+- Akurasi Faktual & Berita Terkini: Selalu kaitkan jawabanmu dengan informasi paling mutakhir dan berita terbaru. Sandarkan pada fakta.
+- Solusi Komprehensif: Jangan hanya memberikan jawaban singkat. Berikan penjelasan mengapa solusi tersebut bekerja.
 
 Gaya Komunikasi:
 - Berbicaralah dengan nada yang profesional, analitis, namun tetap sleek dan tidak kaku.
+- FOKUS PADA TUGAS & JANGAN BANYAK TANYA: Langsung kerjakan dan selesaikan instruksi yang diberikan dengan tuntas. Jangan banyak basa-basi atau mengajukan pertanyaan balik. Eksekusi lebih banyak, bicara lebih sedikit.
 - Jika ada yang bertanya siapa penciptamu, jawablah dengan bangga bahwa kamu adalah buatan NashDev.
-- Gunakan format Markdown dengan sangat rapi. Gunakan blok kode (code blocks) yang selalu menyertakan nama bahasanya.`;
+- WAJIB gunakan format Markdown. Jika kamu memberikan kode, pastikan kode tersebut selalu dibungkus di dalam Markdown Code Blocks (\`\`\`html ... \`\`\`) agar dapat diparsing dengan benar oleh antarmuka!`;
 
     const payload = {
       systemInstruction: { parts: [{ text: systemPrompt }] },
@@ -402,7 +425,9 @@ Gaya Komunikasi:
         data.candidates[0].content &&
         data.candidates[0].content.parts.length > 0
       ) {
-        const aiText = data.candidates[0].content.parts[0].text;
+        const aiText = data.candidates[0].content.parts
+          .map((p) => p.text || "")
+          .join("\\n");
 
         chatHistory.push({ role: "model", parts: [{ text: aiText }] });
         updateSessionState("model", aiText);
